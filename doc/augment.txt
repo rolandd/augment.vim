@@ -1,0 +1,111 @@
+*augment.txt* *augment* *Augment*
+
+  Augment AI: Augment yourself with the best AI pair programmer
+------------------------------------------------------------------------------
+Table of Contents                                  *augment-table-of-contents*
+
+1. Quick Start                                                 |augment-start|
+2. Commands                                                 |augment-commands|
+3. Options                                                   |augment-options|
+4. Alternate Keybinds                             |augment-alternate-keybinds|
+5. Highlighting                                         |augment-highlighting|
+
+------------------------------------------------------------------------------
+Quick Start                                                *augment-start*
+
+Get started with Augment by signing in using the `:Augment signin` command.
+Once signed in, suggestions will be available in all supported languages.
+Open a file, start typing, and use tab to accept suggestions as they appear.
+
+------------------------------------------------------------------------------
+Commands                                                    *augment-commands*
+
+The following commands are provided:
+
+                                                            *:Augment_status*
+`:Augment status`
+    View the current status of the plugin.
+
+                                                            *:Augment_signin*
+`:Augment signin`
+   Authenticate with the Augment service using OAuth. This is required before
+   using the plugin for the first time.
+
+                                                            *:Augment_signout*
+`:Augment signout`
+    Sign out of Augment.
+
+                                                            *:Augment_enable*
+`:Augment enable`
+    Globally enable suggestions (on by default).
+
+                                                            *:Augment_disable*
+`:Augment disable`
+    Globally disable suggestions.
+
+                                                            *:Augment_log*
+`:Augment log`
+    View the plugin log. This is useful for debugging.
+
+
+------------------------------------------------------------------------------
+Options                                                   *augment-options*
+
+The following options are available:
+
+                                               *g:augment_disable_tab_mapping*
+g:augment_disable_tab_mapping
+    The default tab mapping can be disabled by setting
+    `g:augment_disable_tab_mapping = v:true` before the plugin is loaded.
+
+                                               *g:augment_enable*
+g:augment_enable
+    Inline completions can be disabled by setting `g:augment_enable = v:false`
+    before the plugin is loaded.
+
+
+------------------------------------------------------------------------------
+Alternate Keybinds                             *augment-alternate-keybinds*
+
+By default, tab is used to accept a suggestion. If you want to use a different
+key, create a mapping that calls `augment#Accept()`. The function takes an
+optional arugment used to specify the fallback text to insert if no suggestion
+is available.
+
+>vim
+    " Use Ctrl-Y to accept a suggestion
+    inoremap <c-y> <cmd>call augment#Accept()<cr>
+
+    " Use enter to accept a suggestion, falling back to a newline if no suggestion
+    " is available
+    inoremap <cr> <cmd>call augment#Accept("\n")<cr>
+<
+
+------------------------------------------------------------------------------
+Highlighting                                         *augment-highlighting*
+
+You can change the inline suggestion highlighting by using an autocmd to update the
+`AugmentSuggestionHighlight` highlight group. For example, to change the highlighting
+when using the `peachpuff` color scheme, use:
+
+>vim
+    autocmd ColorScheme peachpuff highlight AugmentSuggestionHighlight guifg=#888888 ctermbg=8
+<
+
+Or, for neovim:
+
+>lua
+    vim.api.nvim_create_autocmd('ColorScheme', {
+      pattern = 'peachpuff',
+      callback = function()
+        vim.api.nvim_set_hl(0, 'AugmentSuggestionHighlight', {
+          fg = '#888888',
+          ctermfg = 8,
+          force = true
+        })
+      end
+    })
+<
+
+
+vim:tw=78:ts=8:noet:ft=help:norl:
