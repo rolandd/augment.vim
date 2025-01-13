@@ -25,27 +25,27 @@
     - Manual installation (Vim):
 
         ```bash
-        git clone git@github.com:augmentcode/augment.vim.git \
+        git clone https://github.com/augmentcode/augment.vim.git \
             ~/.vim/pack/augment/start/augment.vim
         ```
 
     - Manual installation (Neovim):
 
         ```bash
-        git clone git@github.com:augmentcode/augment.vim.git \
+        git clone https://github.com/augmentcode/augment.vim.git \
             ~/.config/nvim/pack/augment/start/augment.vim
         ```
 
     - Vim Plug:
 
         ```vim
-        Plug 'git@github.com:augmentcode/augment.vim.git'
+        Plug 'augmentcode/augment.vim'
         ```
 
     - Lazy.nvim:
 
         ```lua
-        { 'git@github.com:augmentcode/augment.vim.git' },
+        { 'augmentcode/augment.vim' },
         ```
 
 1. Open Vim and sign in to Augment with the `:Augment signin` command.
