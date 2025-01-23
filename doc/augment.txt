@@ -47,6 +47,11 @@ The following commands are provided:
 `:Augment log`
     View the plugin log. This is useful for debugging.
 
+                                                            *:Augment_chat*
+`:Augment chat [message]`
+    Start a chat with Augment AI. In visual mode, the selected text will be
+    included in the chat request.
+
 
 ------------------------------------------------------------------------------
 Options                                                   *augment-options*
@@ -58,10 +63,36 @@ g:augment_disable_tab_mapping
     The default tab mapping can be disabled by setting
     `g:augment_disable_tab_mapping = v:true` before the plugin is loaded.
 
-                                               *g:augment_enable*
-g:augment_enable
-    Inline completions can be disabled by setting `g:augment_enable = v:false`
+                                               *g:augment_enabled*
+g:augment_enabled
+    Inline completions can be disabled by setting `g:augment_enabled = v:false`
     before the plugin is loaded.
+
+                                               *g:augment_workspace_folders*
+g:augment_workspace_folders
+    Enhance completion quality by providing a list of workspace directories to
+    Augment. These directories will be analyzed to provide additional context
+    to the completion model, improving the accuracy and style of suggestions.
+    For example, including your project's root directory helps Augment generate
+    completions that match your codebase's patterns and conventions. After
+    adding a workspace folder and restarting vim, the output of the `:Augment
+    status` command will include the syncing progress for the added folder.
+
+    Workspace folders can be specified using absolute paths or paths relative
+    to your home directory (~).
+
+    Example:
+    ```vim
+    let g:augment_workspace_folders = ['/path/to/project', '~/another-project']
+    ```
+
+    Note: This option must be set before the plugin is loaded.
+
+                                               *g:augment_suppress_version_warning*
+g:augment_suppress_version_warning
+    By default, Augment will display a warning message if the plugin version
+    is outdated. This can be disabled by setting
+    `g:augment_suppress_version_warning = v:true` before the plugin is loaded.
 
 
 ------------------------------------------------------------------------------

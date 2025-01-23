@@ -35,7 +35,7 @@ else
 endif
 
 " Setup commands
-command! -nargs=? -complete=custom,augment#CommandComplete Augment call augment#Command('<args>')
+command! -range -nargs=* -complete=custom,augment#CommandComplete Augment <line1>,<line2> call augment#Command(<range>, <q-args>)
 
 function! s:SetupVirtualText() abort
     if &t_Co == 256

@@ -64,7 +64,46 @@ The following commands are provided:
 :Augment enable     " Globally enable suggestions (on by default)
 :Augment disable    " Globally disable suggestions
 :Augment log        " View the plugin log
+:Augment chat       " Start a chat with Augment AI
 ```
+
+## Chat
+
+The chat command allows you to interact with Augment AI in a conversational
+manner. You can use it in two ways:
+
+1. Direct command with message:
+
+    ```vim
+    :Augment chat How do I implement binary search?
+    ```
+
+2. With selected text:
+
+   - Select text in visual mode
+
+   - Type `:Augment chat` followed by your question about the selection
+
+The response will appear in a new buffer with markdown formatting. Note that
+chat is currently limited to single-turn conversations - each chat command
+starts a new conversation.
+
+## Workspace Folders
+
+Workspace folders help Augment understand your codebase better by providing
+additional context. You can configure workspace folders by setting
+`g:augment_workspace_folders` in your vimrc:
+
+```vim
+let g:augment_workspace_folders = ['/path/to/project', '~/another-project']
+```
+
+Workspace folders can be specified using absolute paths or paths relative to
+your home directory (~). Adding your project's root directory as a workspace
+folder helps Augment generate completions that match your codebase's patterns
+and conventions.
+
+Note: This option must be set before the plugin is loaded.
 
 ## Alternate Keybinds
 
@@ -84,6 +123,11 @@ inoremap <cr> <cmd>call augment#Accept("\n")<cr>
 
 The default tab mapping can be disabled by setting
 `g:augment_disable_tab_mapping = v:true` before the plugin is loaded.
+
+If another plugin uses tab in insert mode, the Augment tab mapping may be
+overridden depending on the order in which the plugins are loaded. If tab isn't
+working for you, the `imap <tab>` command can be used to check if the mapping is
+present.
 
 ## Licensing and Distribution
 

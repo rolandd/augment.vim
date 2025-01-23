@@ -4,7 +4,7 @@
 " Functions for interacting with augment suggestions
 
 " Clear the suggestion
-function! augment#suggestion#Clear() abort
+function! augment#suggestion#Clear(...) abort
     if has('nvim')
         let ns_id = nvim_create_namespace('AugmentSuggestion')
         call nvim_buf_clear_namespace(0, ns_id, 0, -1)
@@ -14,11 +14,21 @@ function! augment#suggestion#Clear() abort
 
     let current = exists('b:_augment_suggestion') ? b:_augment_suggestion : {}
     let b:_augment_suggestion = {}
+
+    " Send the reject resolution, checking optional argument to skip
+    let skip_resolution = a:0 > 0 ? a:1 : v:false
+    if !empty(current) && !skip_resolution
+        call augment#client#Client().Notify('augment/resolveCompletion', {
+                    \ 'requestId': current.request_id,
+                    \ 'accept': v:false,
+                    \ })
+    endif
+
     return current
 endfunction
 
 " Show a suggestion
-function! augment#suggestion#Show(text, req_line, req_col, req_changedtick) abort
+function! augment#suggestion#Show(text, request_id, req_line, req_col, req_changedtick) abort
     if len(a:text) == 0
         return
     endif
@@ -28,6 +38,7 @@ function! augment#suggestion#Show(text, req_line, req_col, req_changedtick) abor
     " Save the suggestion information in a buffer-local variable
     let b:_augment_suggestion = {
                 \ 'lines': split(a:text, "\n", 1),
+                \ 'request_id': a:request_id,
                 \ 'req_line': a:req_line,
                 \ 'req_col': a:req_col,
                 \ 'req_changedtick': a:req_changedtick,
@@ -71,7 +82,7 @@ endfunction
 " Accept the currently active suggestion if one is available, returning true
 " if there was a suggestion to accept and false otherwise
 function! augment#suggestion#Accept() abort
-    let info = augment#suggestion#Clear()
+    let info = augment#suggestion#Clear(v:true)
     if !has_key(info, 'lines')
         return v:false
     endif
@@ -109,6 +120,12 @@ function! augment#suggestion#Accept() abort
     else
         call cursor(line('.') + len(lines) - 1, len(lines[-1]) + 1)
     endif
+
+    " Send the accept resolution
+    call augment#client#Client().Notify('augment/resolveCompletion', {
+                \ 'requestId': info.request_id,
+                \ 'accept': v:true,
+                \ })
 
     return v:true
 endfunction

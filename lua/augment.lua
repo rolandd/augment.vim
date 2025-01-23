@@ -4,11 +4,19 @@
 local M = {}
 
 -- Start the lsp client
-M.start_client = function(command)
+M.start_client = function(command, notification_methods, workspace_folders)
     local vim_version = tostring(vim.version())
     local plugin_version = vim.call('augment#version#Version')
 
-    local id = vim.lsp.start_client({
+    -- Set up noficiation handlers that forward requests to the handlers in the vimscript
+    local handlers = {}
+    for _, method in ipairs(notification_methods) do
+        handlers[method] = function(_, params, _)
+            vim.call('augment#client#NvimNotification', method, params)
+        end
+    end
+
+    local config = {
         name = 'Augment Server',
         cmd = command,
         init_options = {
@@ -23,9 +31,16 @@ M.start_client = function(command)
                 vim.call('augment#client#NvimOnExit', code, signal, client_id)
             end)
         end,
-        -- TODO(mpauly): setup handlers. could use log message as a case study
+        handlers = handlers,
         -- TODO(mpauly): on_error
-    })
+    }
+
+    -- If workspace folders are provided, use them
+    if workspace_folders and #workspace_folders > 0 then
+        config.workspace_folders = workspace_folders
+    end
+
+    local id = vim.lsp.start_client(config)
     return id
 end
 

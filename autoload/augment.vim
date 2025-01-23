@@ -12,6 +12,11 @@ endfunction
 
 let s:NOT_RUNNING_MSG = 'The Augment language server is not running. See ":Augment log" for more details.'
 
+" Get the text of the current buffer, accounting for the newline at the end
+function! s:GetBufText() abort
+    return join(getline(1, '$'), "\n") . "\n"
+endfunction
+
 " Notify the server that a buffer has been opened
 function! s:OpenBuffer() abort
     if !s:IsRunning()
@@ -23,7 +28,7 @@ function! s:OpenBuffer() abort
         call luaeval('require("augment").open_buffer(_A[1], _A[2])', [client.client_id, bufnr('%')])
     else
         let uri = 'file://' . expand('%:p')
-        let text = join(getline(1, '$'), "\n")
+        let text = s:GetBufText()
         call client.Notify('textDocument/didOpen', {
                     \ 'textDocument': {
                     \   'uri': uri,
@@ -51,7 +56,7 @@ function! s:UpdateBuffer() abort
         let b:_augment_buf_tick = b:changedtick
 
         let uri = 'file://' . expand('%:p')
-        let text = join(getline(1, '$'), "\n")
+        let text = s:GetBufText()
         call augment#client#Client().Notify('textDocument/didChange', {
                     \ 'textDocument': {
                     \   'uri': uri,
@@ -96,12 +101,12 @@ function! s:RequestCompletion() abort
 endfunction
 
 " Show the log
-function! s:CommandLog() abort
+function! s:CommandLog(...) abort
     call augment#log#Show()
 endfunction
 
 " Send sign-in request to the language server
-function! s:CommandSignIn() abort
+function! s:CommandSignIn(...) abort
     if !s:IsRunning()
         echohl WarningMsg
         echo s:NOT_RUNNING_MSG
@@ -113,7 +118,7 @@ function! s:CommandSignIn() abort
 endfunction
 
 " Send sign-out request to the language server
-function! s:CommandSignOut() abort
+function! s:CommandSignOut(...) abort
     if !s:IsRunning()
         echohl WarningMsg
         echo s:NOT_RUNNING_MSG
@@ -124,15 +129,15 @@ function! s:CommandSignOut() abort
     call augment#client#Client().Request('augment/logout', {})
 endfunction
 
-function! s:CommandEnable() abort
+function! s:CommandEnable(...) abort
     let g:augment_enabled = v:true
 endfunction
 
-function! s:CommandDisable() abort
+function! s:CommandDisable(...) abort
     let g:augment_enabled = v:false
 endfunction
 
-function! s:CommandStatus() abort
+function! s:CommandStatus(...) abort
     if !s:IsRunning()
         echohl WarningMsg
         echo s:NOT_RUNNING_MSG
@@ -143,6 +148,73 @@ function! s:CommandStatus() abort
     call augment#client#Client().Request('augment/status', {})
 endfunction
 
+function! s:CommandChat(range, args) abort
+    if exists('g:augment_enabled') && !g:augment_enabled
+        echohl WarningMsg
+        echo 'Augment: Not enabled. Run ":Augment enable" to enable the plugin.'
+        echohl None
+        return
+    endif
+
+    if !s:IsRunning()
+        echohl WarningMsg
+        echo s:NOT_RUNNING_MSG
+        echohl None
+        return
+    endif
+
+    " If range arguments were provided (when using :Augment chat) or in visual
+    " mode, get the selected text
+    if a:range == 2 || mode() ==# 'v' || mode() ==# 'V'
+        let selected_text = augment#chat#GetSelectedText()
+    else
+        let selected_text = ''
+    endif
+
+    " Use the message from the additional command arguments if provided, or
+    " prompt the user for a message
+    let message = empty(a:args) ? input('Message: ') : a:args
+
+    " Handle cancellation or empty input
+    if message ==# '' || message =~# '^\s*$'
+        redraw
+        echo 'Chat cancelled'
+        return
+    endif
+
+    " Create new buffer for chat response
+    let chat_bufname = 'AugmentChat-' . strftime("%Y%m%d-%H%M%S")
+    let current_win = bufwinid(bufnr('%'))
+    call augment#chat#CreateBuffer(chat_bufname)
+    call win_gotoid(current_win)
+
+    call augment#log#Info(
+                \ 'Making chat request in buffer ' . chat_bufname
+                \ . ' with selected_text="' . selected_text
+                \ . '"' . ' message="' . message . '"')
+
+    let params = {
+        \ 'textDocumentPosition': {
+        \     'textDocument': {
+        \         'uri': 'file://' . expand('%:p'),
+        \     },
+        \     'position': {
+        \         'line': line('.') - 1,
+        \         'character': col('.') - 1,
+        \     },
+        \ },
+        \ 'message': message,
+    \ 'partialResultToken': chat_bufname,
+    \ }
+
+    " Add selected text if available
+    if !empty(selected_text)
+        let params['selectedText'] = selected_text
+    endif
+
+    call augment#client#Client().Request('augment/chat', params)
+endfunction
+
 " Handle user commands
 let s:command_handlers = {
     \ 'log': function('s:CommandLog'),
@@ -151,24 +223,30 @@ let s:command_handlers = {
     \ 'enable': function('s:CommandEnable'),
     \ 'disable': function('s:CommandDisable'),
     \ 'status': function('s:CommandStatus'),
+    \ 'chat': function('s:CommandChat'),
     \ }
 
-function! augment#Command(command) abort
-    if empty(a:command)
+function! augment#Command(range, args) abort range
+    if empty(a:args)
         call s:command_handlers['status']()
         return
     endif
 
+    let command = split(a:args)[0]
     for [name, Handler] in items(s:command_handlers)
         " Note that ==? is case-insensitive comparison
-        if a:command ==? name
-            call Handler()
+        if command ==? name
+            " Call the command handler with the count of range arguments as
+            " the first parameter, followed by the rest of the arguments to
+            " the command as a single string
+            let command_args = substitute(a:args, '^\S*\s*', '', '')
+            call Handler(a:range, command_args)
             return
         endif
     endfor
 
     echohl WarningMsg
-    echo 'Augment: Unknown command: "' . a:command . '"'
+    echo 'Augment: Unknown command: "' . command . '"'
     echohl None
 endfunction
 

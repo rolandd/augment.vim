@@ -47,6 +47,21 @@ function! s:NvimRequest(method, params) dict abort
     " For nvim tracking the request methods and params is handled in the lua code
 endfunction
 
+" Handle a chat chunk notification
+function! s:HandleChatChunk(client, params) abort
+    let text = a:params.value.text
+    let chat_buf = bufnr(a:params.token)
+    if chat_buf == -1
+        call augment#log#Error('Could not find chat buffer ' . a:params.token)
+        return
+    endif
+
+    let lines = split(text, "\n", v:true)
+    let last_line = getbufline(chat_buf, '$')[0]
+    silent! call setbufline(chat_buf, '$', last_line . lines[0])
+    silent! call appendbufline(chat_buf, '$', lines[1:])
+endfunction
+
 " Handle the initialize response
 function! s:HandleInitialize(client, params, result, err) abort
     if a:err isnot v:null
@@ -81,7 +96,7 @@ function! s:HandleCompletion(client, params, result, err) abort
     " Show the completion
     let text = a:result[0].insertText
     let request_id = a:result[0].label
-    call augment#suggestion#Show(text, req_line, req_col, req_changedtick)
+    call augment#suggestion#Show(text, request_id, req_line, req_col, req_changedtick)
 
     call augment#log#Info('Received completion with request_id=' . request_id . ' text=' . text)
 
@@ -139,13 +154,74 @@ function! s:HandleStatus(client, params, result, err) abort
 
     let loggedIn = a:result.loggedIn
     let enabled = exists('g:augment_enabled') ? g:augment_enabled : v:true
+    if has_key(a:result, 'syncPercentage')
+        let syncPercentage = a:result.syncPercentage == 100 ? 'fully' : printf('%d%%', a:result.syncPercentage)
+        let syncText = printf(' (workspace %s synced)', syncPercentage)
+    else
+        let syncText = ''
+    endif
 
     if !loggedIn
         echom 'Augment: Not signed in. Run ":Augment signin" to start the sign in flow or ":h augment" for more information on the plugin.'
     elseif !enabled
-        echom 'Augment: Signed in, disabled.'
+        echom printf('Augment%s: Signed in, disabled.', syncText)
     else
-        echom 'Augment: Signed in, enabled.'
+        echom printf('Augment%s: Signed in, enabled.', syncText)
+    endif
+endfunction
+
+" Handle the augment/chat response
+function! s:HandleChat(client, params, result, err) abort
+    if a:err isnot v:null
+        call augment#log#Error('augment/chat response error: ' . string(a:err))
+        return
+    endif
+
+    call augment#log#Info('Received chat response with request_id=' . a:result.label . ' buffer=' . a:params.partialResultToken)
+
+    " Update contents of chat buffer
+    let text = a:result.text
+    if !empty(text)
+        let chat_buf = bufnr(a:params.partialResultToken)
+        if chat_buf == -1
+            call augment#log#Error('Could not find chat buffer ' . a:params.partialResultToken)
+            return
+        endif
+        silent! call setbufline(chat_buf, 1, split(text, '\n'))
+    endif
+
+    " Trigger the ChatResponse autocommand (used for testing)
+    silent doautocmd User ChatResponse
+endfunction
+
+" Handle the augment/pluginVerion response
+function! s:HandlePluginVersion(client, params, result, err) abort
+    if a:err isnot v:null
+        call augment#log#Error('augment/pluginVersion response error: ' . string(a:err))
+        return
+    endif
+
+    " Check version against current, displaying a warning message if outdated
+    let latest_version = a:result.version
+    let current_version = 'v' . augment#version#Version()
+    if latest_version !=# current_version
+        let warning_message = join([
+                    \ 'Your plugin version ',
+                    \ current_version,
+                    \ ' is lower than the latest version ',
+                    \ latest_version,
+                    \ '. Please update your plugin to receive the latest features and bug fixes.'
+                    \ ], '')
+        call augment#log#Warn(warning_message)
+
+        " If the user has suppressed the version warning, don't show it
+        if exists('g:augment_suppress_version_warning') && g:augment_suppress_version_warning
+            return
+        endif
+
+        echohl WarningMsg
+        echom 'Augment: ' . warning_message
+        echohl None
     endif
 endfunction
 
@@ -153,6 +229,11 @@ endfunction
 function! s:OnMessage(client, channel, message) abort
     if has_key(a:message, 'id')
         " Process a response
+        if !has_key(a:client.requests, a:message.id)
+            call augment#log#Warn('Received response for unknown request: ' . string(a:message))
+            return
+        endif
+
         let [method, params] = remove(a:client.requests, a:message.id)
 
         if !has_key(a:client.response_handlers, method)
@@ -170,6 +251,16 @@ function! s:OnMessage(client, channel, message) abort
         else
             call a:client.notification_handlers[method](a:client, a:message.params)
         endif
+    endif
+endfunction
+
+" Handle a server notification in nvim (called from lua)
+function! augment#client#NvimNotification(method, params) abort
+    let client = augment#client#Client()
+    if !has_key(client.notification_handlers, a:method)
+        call augment#log#Warn('Unprocessed server notification: ' . string(a:method) . ': ' . string(a:params))
+    else
+        call client.notification_handlers[a:method](client, a:params)
     endif
 endfunction
 
@@ -198,12 +289,39 @@ function! s:OnExit(client, channel, message) abort
     endif
 endfunction
 
+function! s:GetWorkspaceFolders() abort
+    " Convert any workspace folder paths to URIs for the language server
+    if !exists('g:augment_workspace_folders')
+        return []
+    endif
+
+    let valid_folders = []
+    for folder in g:augment_workspace_folders
+        let abs_path = fnamemodify(folder, ':p')
+        if !isdirectory(abs_path)
+            call augment#log#Error('The following workspace folder does not exist: ' . abs_path)
+        else
+            call add(valid_folders, folder)
+        endif
+    endfor
+
+    let workspace_folders = map(copy(valid_folders), {_, folder ->
+                \ {'uri': 'file://' . fnamemodify(folder, ':p'),
+                \  'name': fnamemodify(folder, ':t')}})
+
+    " Log the workspace folders
+    call augment#log#Info('Using workspace folders: ' . string(workspace_folders))
+    return workspace_folders
+endfunction
+
 " Run a new server and create a new client object
 function! s:New() abort
     call augment#log#Info('Starting augment server')
 
     " Set the message handlers
-    let notification_handlers = {}
+    let notification_handlers = {
+                \ 'augment/chatChunk': function('s:HandleChatChunk'),
+                \ }
     let response_handlers = {
                 \ 'initialize': function('s:HandleInitialize'),
                 \ 'textDocument/completion': function('s:HandleCompletion'),
@@ -211,6 +329,8 @@ function! s:New() abort
                 \ 'augment/token': function('s:HandleToken'),
                 \ 'augment/logout': function('s:HandleLogout'),
                 \ 'augment/status': function('s:HandleStatus'),
+                \ 'augment/chat': function('s:HandleChat'),
+                \ 'augment/pluginVersion': function('s:HandlePluginVersion'),
                 \ }
 
     " Create the client object
@@ -226,6 +346,9 @@ function! s:New() abort
         return client
     endif
 
+    " Convert any workspace folders to URIs for the language server
+    let workspace_folders = s:GetWorkspaceFolders()
+
     " Start the server and send the initialize request
     if has('nvim')
         " Nvim-specific client setup
@@ -234,8 +357,12 @@ function! s:New() abort
                     \ 'Request': function('s:NvimRequest'),
                     \ })
 
+        " The nvim lsp client setup requires a list of notification methods to set up its handlers
+        let notification_methods = keys(notification_handlers)
+
         " If the client exits, lua will notify NvimOnExit()
-        let client.client_id = luaeval('require("augment").start_client(_A[1])', [s:job_command])
+        let client.client_id = luaeval('require("augment").start_client(_A[1], _A[2], _A[3])',
+                    \ [s:job_command, notification_methods, workspace_folders])
     else
         " Vim-specific client setup
         call extend(client, {
@@ -266,9 +393,13 @@ function! s:New() abort
         call client.Request('initialize', {
                     \ 'processId': getpid(),
                     \ 'capabilities': {},
-                    \ 'initializationOptions': initialization_options
+                    \ 'initializationOptions': initialization_options,
+                    \ 'workspaceFolders': workspace_folders,
                     \ })
     endif
+
+    " Request the plugin version from the server
+    call client.Request('augment/pluginVersion', {})
 
     return client
 endfunction
