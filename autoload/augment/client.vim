@@ -316,7 +316,14 @@ endfunction
 
 " Run a new server and create a new client object
 function! s:New() abort
-    call augment#log#Info('Starting augment server')
+    call augment#log#Info('Starting augment server v' . augment#version#Version())
+
+    " If debugging is enabled, set the AUGMENT_LOG_LEVEL environment variable
+    " which will enable debug logging in the server
+    if exists('g:augment_debug') && g:augment_debug
+        let $AUGMENT_LOG_LEVEL = 'debug'
+        echom 'Augment: Debugging enabled'
+    endif
 
     " Set the message handlers
     let notification_handlers = {
