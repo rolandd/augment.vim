@@ -10,7 +10,15 @@ if exists('g:augment_job_command')
     let s:job_command = g:augment_job_command
 else
     let server_file = expand('<sfile>:h:h:h') . '/dist/server.js'
-    let s:job_command = ['node', server_file, '--stdio']
+
+    " If provided, use a user-provided node command
+    if exists('g:augment_node_command')
+        let s:node_command = g:augment_node_command
+    else
+        let s:node_command = 'node'
+    endif
+
+    let s:job_command = [s:node_command, server_file, '--stdio']
 endif
 
 function! s:VimNotify(method, params) dict abort
@@ -49,17 +57,8 @@ endfunction
 
 " Handle a chat chunk notification
 function! s:HandleChatChunk(client, params) abort
-    let text = a:params.value.text
-    let chat_buf = bufnr(a:params.token)
-    if chat_buf == -1
-        call augment#log#Error('Could not find chat buffer ' . a:params.token)
-        return
-    endif
-
-    let lines = split(text, "\n", v:true)
-    let last_line = getbufline(chat_buf, '$')[0]
-    silent! call setbufline(chat_buf, '$', last_line . lines[0])
-    silent! call appendbufline(chat_buf, '$', lines[1:])
+    let text = a:params.text
+    call augment#chat#AppendText(text)
 endfunction
 
 " Handle the initialize response
@@ -177,18 +176,11 @@ function! s:HandleChat(client, params, result, err) abort
         return
     endif
 
-    call augment#log#Info('Received chat response with request_id=' . a:result.label . ' buffer=' . a:params.partialResultToken)
+    call augment#log#Info('Received chat response with request_id=' . a:result.requestId)
 
-    " Update contents of chat buffer
-    let text = a:result.text
-    if !empty(text)
-        let chat_buf = bufnr(a:params.partialResultToken)
-        if chat_buf == -1
-            call augment#log#Error('Could not find chat buffer ' . a:params.partialResultToken)
-            return
-        endif
-        silent! call setbufline(chat_buf, 1, split(text, '\n'))
-    endif
+    " Add an extra newline so that the messages are spaced properly
+    call augment#chat#AppendText("\n\n")
+    call augment#chat#AppendHistory(a:params.message, a:result.text, a:result.requestId)
 
     " Trigger the ChatResponse autocommand (used for testing)
     silent doautocmd User ChatResponse
@@ -203,15 +195,13 @@ function! s:HandlePluginVersion(client, params, result, err) abort
 
     " Check version against current, displaying a warning message if outdated
     let latest_version = a:result.version
-    let current_version = 'v' . augment#version#Version()
+    let current_version = augment#version#Version()
     if latest_version !=# current_version
-        let warning_message = join([
-                    \ 'Your plugin version ',
+        let is_prerelease = a:result.isPrerelease
+        let warning_message = printf('Your plugin version %s is lower than the latest %s version %s. Please update your plugin to receive the latest features and bug fixes.',
                     \ current_version,
-                    \ ' is lower than the latest version ',
-                    \ latest_version,
-                    \ '. Please update your plugin to receive the latest features and bug fixes.'
-                    \ ], '')
+                    \ is_prerelease ? 'prerelease' : 'stable',
+                    \ latest_version)
         call augment#log#Warn(warning_message)
 
         " If the user has suppressed the version warning, don't show it
@@ -316,7 +306,8 @@ endfunction
 
 " Run a new server and create a new client object
 function! s:New() abort
-    call augment#log#Info('Starting augment server v' . augment#version#Version())
+    let plugin_version = augment#version#Version()
+    call augment#log#Info('Starting Augment Server v' . plugin_version)
 
     " If debugging is enabled, set the AUGMENT_LOG_LEVEL environment variable
     " which will enable debug logging in the server
@@ -349,7 +340,7 @@ function! s:New() abort
 
     " Check that the runtime environment is installed. If not, return a partially initialized client
     if executable(s:job_command[0]) == 0
-        call augment#log#Error('The Augment runtime (' . s:job_command[0] . ') was not found.')
+        call augment#log#Error('The Augment runtime (' . s:job_command[0] . ') was not found. If node is available on your system under a different name, you can set the `g:augment_node_command` variable. See `:help g:augment_node_command` for more details.')
         return client
     endif
 
@@ -390,7 +381,6 @@ function! s:New() abort
                     \ })
 
         let vim_version = printf('%d.%d.%d', v:version / 100, v:version % 100, v:versionlong % 1000)
-        let plugin_version = augment#version#Version()
         let initialization_options = {
                     \ 'editor': 'vim',
                     \ 'vimVersion': vim_version,
@@ -406,7 +396,7 @@ function! s:New() abort
     endif
 
     " Request the plugin version from the server
-    call client.Request('augment/pluginVersion', {})
+    call client.Request('augment/pluginVersion', {'version': plugin_version})
 
     return client
 endfunction
