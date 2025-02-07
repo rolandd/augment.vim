@@ -58,13 +58,15 @@ appear.
 The following commands are provided:
 
 ```vim
-:Augment status     " View the current status of the plugin
-:Augment signin     " Start the sign in flow
-:Augment signout    " Sign out of Augment
-:Augment enable     " Globally enable suggestions (on by default)
-:Augment disable    " Globally disable suggestions
-:Augment log        " View the plugin log
-:Augment chat       " Start a chat with Augment AI
+:Augment status        " View the current status of the plugin
+:Augment signin        " Start the sign in flow
+:Augment signout       " Sign out of Augment
+:Augment enable        " Globally enable suggestions (on by default)
+:Augment disable       " Globally disable suggestions
+:Augment log           " View the plugin log
+:Augment chat          " Send a chat message to Augment AI
+:Augment chat-new      " Start a new chat conversation
+:Augment chat-toggle   " Toggle the chat panel visibility
 ```
 
 ## Chat

@@ -3,6 +3,155 @@
 
 " Utilities for chat
 
+function! s:ResetChatContents() abort
+    let chat_buf = bufnr('AugmentChatHistory')
+    if chat_buf == -1
+        call augment#log#Error('Chat reset failed: Could not find chat history buffer')
+        return
+    endif
+
+    call setbufvar(chat_buf, '&modifiable', v:true)
+    call deletebufline(chat_buf, 1, '$')
+    call augment#chat#AppendText('# Augment Chat History'
+                \ . "\n\n"
+                \ . '`:Augment chat`         Send a chat message in the current conversation'
+                \ . "\n"
+                \ . '`:Augment chat-new`     Start a new conversation'
+                \ . "\n"
+                \ . '`:Augment chat-toggle`  Toggle the chat panel visibility'
+                \ . "\n\n")
+endfunction
+
+function! augment#chat#Toggle() abort
+    let chat_id = bufwinid('AugmentChatHistory')
+    if chat_id == -1
+        call augment#chat#OpenChatPanel()
+    else
+        " Don't close if it's the last window
+        if winnr('$') > 1
+            call win_execute(chat_id, 'close')
+        endif
+    endif
+endfunction
+
+function! augment#chat#OpenChatPanel() abort
+    let current_win = win_getid()
+
+    " Check if the panel already exists and has been setup
+    if bufexists('AugmentChatHistory') && !getbufvar('AugmentChatHistory', '&modifiable')
+        if bufwinid('AugmentChatHistory') == -1
+            botright 80vnew AugmentChatHistory
+        endif
+        call win_gotoid(current_win)
+        return
+    endif
+
+    " Open a buffer for the chat history with a width of 80 characters
+    botright 80vnew AugmentChatHistory
+    setlocal buftype=nofile      " Buffer will never be written to a file
+    setlocal nomodifiable        " Prevent any modifications
+    setlocal noswapfile          " Don't create a swapfile
+    setlocal winfixbuf           " Keep buffer in window when splitting
+    setlocal bufhidden=hide      " When buffer is abandoned, hide it
+    setlocal nobuflisted         " Hide from :ls
+    setlocal wrap                " Wrap long lines
+    setlocal linebreak           " Wrap at word boundaries
+    setlocal filetype=markdown   " Use markdown syntax highlighting
+    setlocal nonumber            " Hide line numbers
+    setlocal norelativenumber    " Hide relative line numbers
+    setlocal signcolumn=no       " Hide sign column
+    setlocal nocursorline        " Disable cursor line highlighting
+    setlocal nospell             " Disable spell checking
+    setlocal nofoldenable        " Disable folding
+    setlocal textwidth=0         " Disable text width limit
+    setlocal scrolloff=0         " Disable scrolloff
+
+    " Add the chat header to the buffer
+    call s:ResetChatContents()
+
+    " TODO(AU-6480): create another buffer for the chat input
+    " new AugmentChatInput
+
+    call win_gotoid(current_win)
+endfunction
+
+function! augment#chat#Reset() abort
+    call s:ResetChatContents()
+    call s:ResetHistory()
+endfunction
+
+function! s:ResetHistory() abort
+    let g:_augment_chat_history = []
+endfunction
+
+function! augment#chat#AppendText(text) abort
+    let chat_buf = bufnr('AugmentChatHistory')
+    if chat_buf == -1
+        call augment#log#Error('Chat append failed: Could not find chat history buffer')
+        return
+    endif
+
+    let lines = split(a:text, "\n", v:true)
+    let last_line = getbufline(chat_buf, '$')[0]
+
+    call setbufvar(chat_buf, '&modifiable', v:true)
+    call setbufline(chat_buf, '$', last_line . lines[0])
+    call appendbufline(chat_buf, '$', lines[1:])
+    call setbufvar(chat_buf, '&modifiable', v:false)
+endfunction
+
+function! augment#chat#AppendMessage(message) abort
+    " If not the first message, scroll to the bottom
+    let chat_id = bufwinid('AugmentChatHistory')
+    if !empty(augment#chat#GetHistory()) && chat_id != -1
+        let command = "call winrestview({'lnum': line('$'), 'topline': line('$')})"
+        call win_execute(chat_id, command)
+    endif
+
+    let message_text = '================================================================================'
+                \ . "\n\n"
+                \ . "\t*You*"
+                \ . "\n\n"
+                \ . a:message
+                \ . "\n\n"
+                \ . '--------------------------------------------------------------------------------'
+                \ . "\n\n"
+                \ . "\t*Augment*"
+                \ . "\n\n"
+    call augment#chat#AppendText(message_text)
+endfunction
+
+function! augment#chat#AppendHistory(request_message, response_text, request_id) abort
+    if !exists('g:_augment_chat_history')
+        let g:_augment_chat_history = []
+    endif
+    call add(g:_augment_chat_history, {
+        \ 'request_message': a:request_message,
+        \ 'response_text': a:response_text,
+        \ 'request_id': a:request_id,
+        \ })
+endfunction
+
+function! augment#chat#GetHistory() abort
+    if exists('g:_augment_chat_history')
+        return g:_augment_chat_history
+    endif
+    return []
+endfunction
+
+function! augment#chat#SaveUri() abort
+    if bufname('%') !=# 'AugmentChatHistory'
+        let g:_augment_current_uri = 'file://' . expand('%:p')
+    endif
+endfunction
+
+function! augment#chat#GetUri() abort
+    if exists('g:_augment_current_uri')
+        return g:_augment_current_uri
+    endif
+    return 'file://' . expand('%:p')
+endfunction
+
 function! s:GetBufSelection(line_start, col_start, line_end, col_end) abort
     if a:line_start == a:line_end
         return getline(a:line_start)[a:col_start - 1:a:col_end - 1]
@@ -62,16 +211,4 @@ function! augment#chat#GetSelectedText() abort
     let [line_start, col_start] = getpos("'<")[1:2]
     let [line_end, col_end] = getpos("'>")[1:2]
     return s:GetBufSelection(line_start, col_start, line_end, col_end)
-endfunction
-
-function! augment#chat#CreateBuffer(bufname) abort
-    botright vnew
-    setlocal buftype=nofile
-    setlocal bufhidden=hide
-    setlocal noswapfile
-    setlocal wrap
-    setlocal linebreak
-    execute 'file ' . a:bufname
-    setlocal readonly
-    setlocal filetype=markdown
 endfunction

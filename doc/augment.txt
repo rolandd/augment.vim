@@ -94,6 +94,25 @@ g:augment_suppress_version_warning
     is outdated. This can be disabled by setting
     `g:augment_suppress_version_warning = v:true` before the plugin is loaded.
 
+                                               *g:augment_node_command*
+g:augment_node_command
+    Specify a custom Node.js executable to use when launching the Augment
+    server. By default, Augment will use the 'node' command found in your
+    PATH. The provided command can either be the full path to a Node.js binary
+    or the name of a command in your PATH. Set this option before the plugin
+    is loaded if you need to use a specific Node.js installation. The Node.js
+    version is recommended to be 22.0.0 or higher.
+
+    Note: If the specified Node.js executable is not found, an error message
+    will be displayed in the plugin log.
+
+    Example:
+    ```vim
+    let g:augment_node_command = '/usr/local/bin/node'
+    " Or
+    let g:augment_node_command = 'node-22'
+    ```
+
 
 ------------------------------------------------------------------------------
 Alternate Keybinds                             *augment-alternate-keybinds*

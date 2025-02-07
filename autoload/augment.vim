@@ -171,6 +171,9 @@ function! s:CommandChat(range, args) abort
         let selected_text = ''
     endif
 
+    let uri = augment#chat#GetUri()
+    let history = augment#chat#GetHistory()
+
     " Use the message from the additional command arguments if provided, or
     " prompt the user for a message
     let message = empty(a:args) ? input('Message: ') : a:args
@@ -182,21 +185,18 @@ function! s:CommandChat(range, args) abort
         return
     endif
 
-    " Create new buffer for chat response
-    let chat_bufname = 'AugmentChat-' . strftime("%Y%m%d-%H%M%S")
-    let current_win = bufwinid(bufnr('%'))
-    call augment#chat#CreateBuffer(chat_bufname)
-    call win_gotoid(current_win)
+    call augment#chat#OpenChatPanel()
+    call augment#chat#AppendMessage(message)
 
     call augment#log#Info(
-                \ 'Making chat request in buffer ' . chat_bufname
-                \ . ' with selected_text="' . selected_text
+                \ 'Making chat request with file=' . uri
+                \ . ' selected_text="' . selected_text
                 \ . '"' . ' message="' . message . '"')
 
     let params = {
         \ 'textDocumentPosition': {
         \     'textDocument': {
-        \         'uri': 'file://' . expand('%:p'),
+        \         'uri': uri,
         \     },
         \     'position': {
         \         'line': line('.') - 1,
@@ -204,15 +204,25 @@ function! s:CommandChat(range, args) abort
         \     },
         \ },
         \ 'message': message,
-    \ 'partialResultToken': chat_bufname,
     \ }
 
-    " Add selected text if available
+    " Add selected text and history if available
     if !empty(selected_text)
         let params['selectedText'] = selected_text
     endif
+    if !empty(history)
+        let params['history'] = history
+    endif
 
     call augment#client#Client().Request('augment/chat', params)
+endfunction
+
+function! s:CommandChatNew(range, args) abort
+    call augment#chat#Reset()
+endfunction
+
+function! s:CommandChatToggle(range, args) abort
+    call augment#chat#Toggle()
 endfunction
 
 " Handle user commands
@@ -224,6 +234,8 @@ let s:command_handlers = {
     \ 'disable': function('s:CommandDisable'),
     \ 'status': function('s:CommandStatus'),
     \ 'chat': function('s:CommandChat'),
+    \ 'chat-new': function('s:CommandChatNew'),
+    \ 'chat-toggle': function('s:CommandChatToggle'),
     \ }
 
 function! augment#Command(range, args) abort range
@@ -261,6 +273,7 @@ endfunction
 
 function! augment#OnBufEnter() abort
     call s:OpenBuffer()
+    call augment#chat#SaveUri()
 endfunction
 
 function! augment#OnTextChanged() abort

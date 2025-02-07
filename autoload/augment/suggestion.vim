@@ -22,6 +22,7 @@ function! augment#suggestion#Clear(...) abort
                     \ 'requestId': current.request_id,
                     \ 'accept': v:false,
                     \ })
+        call augment#log#Debug('Rejected completion with request_id=' . current.request_id . ' text=' . string(current.lines))
     endif
 
     return current
@@ -126,6 +127,7 @@ function! augment#suggestion#Accept() abort
                 \ 'requestId': info.request_id,
                 \ 'accept': v:true,
                 \ })
+    call augment#log#Debug('Accepted completion with request_id=' . info.request_id . ' text=' . string(lines))
 
     return v:true
 endfunction
