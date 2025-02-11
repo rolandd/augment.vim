@@ -92,6 +92,11 @@ function! s:HandleCompletion(client, params, result, err) abort
         return
     endif
 
+    " If the user has exited insert mode, ignore the response
+    if mode() !=# 'i'
+        return
+    endif
+
     " Show the completion
     let text = a:result[0].insertText
     let request_id = a:result[0].label
@@ -198,7 +203,7 @@ function! s:HandlePluginVersion(client, params, result, err) abort
     let current_version = augment#version#Version()
     if latest_version !=# current_version
         let is_prerelease = a:result.isPrerelease
-        let warning_message = printf('Your plugin version %s is lower than the latest %s version %s. Please update your plugin to receive the latest features and bug fixes.',
+        let warning_message = printf('Your plugin version v%s is lower than the latest %s version v%s. Please update your plugin to receive the latest features and bug fixes.',
                     \ current_version,
                     \ is_prerelease ? 'prerelease' : 'stable',
                     \ latest_version)
