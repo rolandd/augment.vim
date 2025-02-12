@@ -52,6 +52,14 @@ The following commands are provided:
     Start a chat with Augment AI. In visual mode, the selected text will be
     included in the chat request.
 
+                                                            *:Augment_chat_new*
+`:Augment chat-new`
+    Start a new chat conversation with Augment AI.
+
+                                                            *:Augment_chat_toggle*
+`:Augment chat-toggle`
+    Open/close the chat conversation window.
+
 
 ------------------------------------------------------------------------------
 Options                                                   *augment-options*
