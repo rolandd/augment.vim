@@ -11,7 +11,7 @@ function! s:ResetChatContents() abort
     endif
 
     call setbufvar(chat_buf, '&modifiable', v:true)
-    call deletebufline(chat_buf, 1, '$')
+    silent call deletebufline(chat_buf, 1, '$')
     call augment#chat#AppendText('# Augment Chat History'
                 \ . "\n\n"
                 \ . '`:Augment chat`         Send a chat message in the current conversation'
