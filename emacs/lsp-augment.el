@@ -13,32 +13,48 @@
 
 (require 'lsp-mode)
 
+(defgroup lsp-augment nil
+  "LSP support for Augment."
+  :group 'lsp-mode
+  :link '(url-link "https://www.augmentcode.com"))
+
+(defcustom lsp-augment-server-script "server.js"
+  "Path to server script to run with node."
+  :group 'lsp-augment
+  :risky t
+  :type 'file)
+
 (defun lsp-augment-signin ()
   "Log into the Augment service."
   (interactive)
-  (let
-      ((signin-response
-	(lsp-send-request (lsp-make-request "augment/login" nil))))
-    (if (gethash "loggedIn" signin-response)
-	(message "Already logged into Augment")
-      (progn
-	(browse-url (gethash "url" signin-response))
-	(let ((auth-code (read-from-minibuffer (format "Please complete authentication in your browser...
+  (condition-case err
+      (let
+	  ((signin-response
+	    (lsp-send-request (lsp-make-request "augment/login" nil))))
+	(if (gethash "loggedIn" signin-response)
+	    (message "Already logged into Augment")
+	  (progn
+	    (browse-url (gethash "url" signin-response))
+	    (let ((auth-code (read-from-minibuffer (format "Please complete authentication in your browser...
 %s
 
 After authenticating, you will receive a code.
 Paste the code in the prompt below.
 
 Enter the authentication code: " (gethash "url" signin-response)))))
-	  (lsp-send-request (lsp-make-request "augment/token" (list :code auth-code))))))))
+	      (lsp-send-request (lsp-make-request "augment/token" (list :code auth-code)))
+	      (message "Successfully logged into Augment.")))))
+    (error (message "Failed to sign in: %s" (error-message-string err)))))
 
 (defun lsp-augment-signout ()
   "Log out of the Augment service."
   (interactive)
-  (let
-      ((signout-response
-	(lsp-send-request (lsp-make-request "augment/logout" nil))))
-    (message "Signed out of Augment.")))
+  (condition-case err
+      (let
+	  ((signout-response
+	    (lsp-send-request (lsp-make-request "augment/logout" nil))))
+	(message "Signed out of Augment."))
+    (error (message "Failed to sign out: %s" (error-message-string err)))))
 
 (defun lsp-augment--chat-append-text (text)
   "Append text to the Augment chat buffer."
@@ -64,25 +80,25 @@ Enter the authentication code: " (gethash "url" signin-response)))))
 
 " message)))
 
+(defun lsp-augment--chat-response-handler (response)
+  (lsp-log "chat response: %s" (json-encode response)))
+
 (defun lsp-augment-chat (message)
   "Send a chat request to Augment."
   (interactive "MMessage: ")
-  (let ((chat-message (append (list :textDocumentPosition (lsp--text-document-position-params)
-				   :message message)
-			     (if (region-active-p)
-				 (list :selectedText
-				       (buffer-substring-no-properties (region-beginning) (region-end)))))))
-    (lsp-augment--chat-append-message message)
-    (lsp-request-async "augment/chat"
-		       chat-message
-		       (lambda (response) nil)
-		       :error-handler (lambda (response) (message "augment/chat returned an error")))))
-
-(defcustom lsp-augment-server-script "server.js"
-  "Path to server script to run with node."
-  :group 'lsp-augment
-  :risky t
-  :type 'file)
+  (condition-case err
+      (let ((chat-message (append (list :textDocumentPosition (lsp--text-document-position-params)
+					:message message)
+				  (when (region-active-p)
+				    (list :selectedText
+					  (buffer-substring-no-properties (region-beginning) (region-end)))))))
+	(lsp-augment--chat-append-message message)
+	(lsp-request-async "augment/chat"
+			   chat-message
+			   #'lsp-augment--chat-response-handler
+			   :error-handler (lambda (err)
+					    (message "Chat error: %s" (error-message-string err)))))
+    (error (message "Failed to send chat message: %s" (error-message-string err)))))
 
 (defun lsp-augment--server-command ()
   "Return the executable and command line arguments."
