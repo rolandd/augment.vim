@@ -290,13 +290,27 @@ function! s:GetWorkspaceFolders() abort
         return []
     endif
 
+    " Validate the the workspace folders are a list
+    if type(g:augment_workspace_folders) == v:t_list
+        let folders_list = g:augment_workspace_folders
+    elseif type(g:augment_workspace_folders) == v:t_string
+        let folders_list = [g:augment_workspace_folders]
+    else
+        call augment#log#Error('Workspace folders set to invalid value: ' . string(g:augment_workspace_folders) . '. See `:h g:augment_workspace_folders` for configuration instructions.')
+        return []
+    endif
+
     let valid_folders = []
-    for folder in g:augment_workspace_folders
-        let abs_path = fnamemodify(folder, ':p')
-        if !isdirectory(abs_path)
-            call augment#log#Error('The following workspace folder does not exist: ' . abs_path)
+    for folder in folders_list
+        if type(folder) != v:t_string
+            call augment#log#Error('Expected workspace folder type to be string. Got: ' . string(folder))
         else
-            call add(valid_folders, folder)
+            let abs_path = fnamemodify(folder, ':p')
+            if !isdirectory(abs_path)
+                call augment#log#Error('The following workspace folder does not exist: ' . abs_path)
+            else
+                call add(valid_folders, folder)
+            endif
         endif
     endfor
 
