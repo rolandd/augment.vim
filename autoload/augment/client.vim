@@ -130,7 +130,7 @@ endfunction
 function! s:HandleToken(client, params, result, err) abort
     if a:err isnot v:null
         echohl ErrorMsg
-        echom 'Augment: Error signing in, please try again.'
+        echom 'Augment: Error signing in: ' . a:err.message
         echohl None
         call augment#log#Error('augment/token response error: ' . string(a:err))
         return
