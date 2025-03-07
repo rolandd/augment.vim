@@ -85,7 +85,16 @@ function! s:RequestCompletion() abort
     endif
     let b:_augment_comp_tick = b:changedtick
 
-    let uri = 'file://' . expand('%:p')
+    if has('nvim')
+        " NOTE(mpauly): On neovim, we use the built-in lsp client which
+        " requires the uri to be in the format defined by
+        " vim.uri_from_fname(). There isn't a straightforward way to format
+        " the uri on vim and it isn't causing any issues, so punting on it for
+        " now.
+        let uri = v:lua.vim.uri_from_fname(expand('%:p'))
+    else
+        let uri = 'file://' . expand('%:p')
+    endif
     let text = join(getline(1, '$'), "\n")
     " TODO: remove version-- we use it elsewhere but it's not in the spec
     call augment#client#Client().Request('textDocument/completion', {

@@ -3,6 +3,9 @@
 
 " Client for interacting with the server process
 
+" Custom LSP response error codes
+let s:AUGMENT_ERROR_UNAUTHORIZED = 401
+
 let s:client = {}
 
 " If provided, launch the server from a user-provided command
@@ -74,6 +77,11 @@ endfunction
 " Handle the textDocument/completion response
 function! s:HandleCompletion(client, params, result, err) abort
     if a:err isnot v:null
+        " If the user is not logged in, ignore the error
+        if a:err.code == s:AUGMENT_ERROR_UNAUTHORIZED
+            return
+        endif
+
         call augment#log#Error('Recieved error ' . string(a:err) . ' for completion with params: ' . string(a:params))
         return
     endif
@@ -177,6 +185,10 @@ endfunction
 " Handle the augment/chat response
 function! s:HandleChat(client, params, result, err) abort
     if a:err isnot v:null
+        " NOTE(mpauly): For chat we want to show the error to the user even if
+        " they're not logged in. This helps disambiguate between a
+        " network/slow response error and an authentication error.
+
         call augment#log#Error('augment/chat response error: ' . string(a:err))
         return
     endif
