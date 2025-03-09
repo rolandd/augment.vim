@@ -58,13 +58,18 @@ Enter the authentication code: " (gethash "url" signin-response)))))
 
 (defun lsp-augment--chat-append-text (text)
   "Append text to the Augment chat buffer."
-  (let ((buf (get-buffer-create "*Augment Chat History*"))
-	(inhibit-read-only t))
-    (with-current-buffer buf
-      (special-mode)
-      (goto-char (point-max))
-      (insert text)
-      (pop-to-buffer buf))))
+  (let ((buf-name "*Augment Chat History*"))
+    (with-current-buffer (get-buffer-create buf-name)
+      (unless (derived-mode-p 'markdown-view-mode)
+	(markdown-view-mode))
+      (save-excursion
+	(let ((inhibit-read-only t))
+	  (goto-char (point-max))
+	  (insert text)))
+      (display-buffer buf-name
+		      '((display-buffer-reuse-window
+			 display-buffer-pop-up-window)
+			(reusable-frames . visible))))))
 
 (defun lsp-augment--chat-append-message (message)
   "Append a user chat message to the Augment chat buffer."
@@ -119,6 +124,7 @@ Enter the authentication code: " (gethash "url" signin-response)))))
   :new-connection (lsp-stdio-connection #'lsp-augment--server-command)
   :activation-fn (lsp-activate-on "augment")
   :server-id 'augment-lsp-server
+  :completion-in-comments? t
   :initialization-options #'lsp-augment--server-initialization-options
   :notification-handlers (lsp-ht
 			  ("augment/chatChunk" #'lsp-augment--chat-chunk-handler))))
