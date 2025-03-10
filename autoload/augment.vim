@@ -147,6 +147,11 @@ function! s:CommandDisable(...) abort
 endfunction
 
 function! s:CommandStatus(...) abort
+    if !exists('g:augment_initialized') || !g:augment_initialized
+        call augment#DisplayError('The Augment plugin failed to initialize. See ":Augment log" for more details.')
+        return
+    endif
+
     if !s:IsRunning()
         echohl WarningMsg
         echo s:NOT_RUNNING_MSG
@@ -253,7 +258,14 @@ function! augment#Command(range, args) abort range
         return
     endif
 
+    " If the plugin failed to initialize, only allow status and log commands
     let command = split(a:args)[0]
+    if (!exists('g:augment_initialized') || !g:augment_initialized)
+                \ && command !=# 'status' && command !=# 'log'
+        call augment#DisplayError('The Augment plugin failed to initialize. Only `:Augment status` and `:Augment log` commands are available.')
+        return
+    endif
+
     for [name, Handler] in items(s:command_handlers)
         " Note that ==? is case-insensitive comparison
         if command ==? name
@@ -317,4 +329,23 @@ function! augment#Accept(...) abort
     if !augment#suggestion#Accept()
         call feedkeys(fallback, 'nt')
     endif
+endfunction
+
+" Display an error message to the user in addition to logging it
+function! augment#DisplayError(message) abort
+    " If we have already entered the editor, display the error message
+    " immediately. Otherwise, wait for VimEnter.
+    if v:vim_did_enter
+        echohl ErrorMsg | echom 'Augment: ' . a:message | echohl None
+    else
+        " Shadow the message argument with a script-local variable. This means
+        " that subsequent calls will override the previous message, which
+        " should be fine for our use case.
+        let s:error_message = a:message
+        augroup augment_error
+            autocmd!
+            autocmd VimEnter * echohl ErrorMsg | echom 'Augment: ' . s:error_message | echohl None
+        augroup END
+    endif
+    call augment#log#Error(a:message)
 endfunction

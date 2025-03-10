@@ -51,7 +51,10 @@ function! augment#chat#OpenChatPanel() abort
     setlocal buftype=nofile      " Buffer will never be written to a file
     setlocal nomodifiable        " Prevent any modifications
     setlocal noswapfile          " Don't create a swapfile
-    setlocal winfixbuf           " Keep buffer in window when splitting
+    " NOTE(mpauly): winfixbuf is not available in some subversions of vim 9.1
+    if exists('&winfixbuf')
+        setlocal winfixbuf       " Keep buffer in window when splitting
+    endif
     setlocal bufhidden=hide      " When buffer is abandoned, hide it
     setlocal nobuflisted         " Hide from :ls
     setlocal wrap                " Wrap long lines
