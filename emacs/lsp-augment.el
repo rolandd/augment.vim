@@ -85,25 +85,54 @@ Enter the authentication code: " (gethash "url" signin-response)))))
 
 " message)))
 
-(defun lsp-augment--chat-response-handler (response)
-  (lsp-log "chat response: %s" (json-encode response)))
+(defun lsp-augment--chat-response-handler (message response)
+  "Update chat history when a response is received."
+  (let ((text (gethash "text" response))
+	(request-id (gethash "requestId" response))
+	(buf (get-buffer "*Augment Chat History*")))
+    (when (and buf text request-id)
+      (with-current-buffer buf
+	(unless (local-variable-p 'lsp-augment--chat-history)
+	  (set (make-local-variable 'lsp-augment--chat-history) []))
+	(setq lsp-augment--chat-history
+	      (vconcat lsp-augment--chat-history
+		       `[(:request_message ,message
+					   :response_text ,text
+					   :request_id ,request-id)]))))))
 
 (defun lsp-augment-chat (message)
   "Send a chat request to Augment."
   (interactive "MMessage: ")
   (condition-case err
-      (let ((chat-message (append (list :textDocumentPosition (lsp--text-document-position-params)
+      (let* ((chat-buf (get-buffer "*Augment Chat History*"))
+	     (chat-history (and chat-buf
+				(buffer-local-value 'lsp-augment--chat-history chat-buf)))
+	     (chat-message (append (list :textDocumentPosition (lsp--text-document-position-params)
 					:message message)
 				  (when (region-active-p)
 				    (list :selectedText
-					  (buffer-substring-no-properties (region-beginning) (region-end)))))))
+					  (buffer-substring-no-properties (region-beginning) (region-end))))
+				  (when chat-history
+				    (list :history chat-history)))))
+	(lsp-log "chat request: %s" (json-encode chat-message))
 	(lsp-augment--chat-append-message message)
 	(lsp-request-async "augment/chat"
 			   chat-message
-			   #'lsp-augment--chat-response-handler
+			   (lambda (response)
+			     (lsp-augment--chat-response-handler message response))
 			   :error-handler (lambda (err)
 					    (message "Chat error: %s" (error-message-string err)))))
-    (error (message "Failed to send chat message: %s" (error-message-string err)))))
+    (Error (message "Failed to send chat message: %s" (error-message-string err)))))
+
+(defun lsp-augment-reset-chat ()
+  "Clear the Augment chat history buffer and reset chat history."
+  (interactive)
+  (let ((buf-name "*Augment Chat History*"))
+    (when (get-buffer buf-name)
+      (with-current-buffer buf-name
+	(let ((inhibit-read-only t))
+	  (erase-buffer))
+	(setq-local lsp-augment--chat-history nil)))))
 
 (defun lsp-augment--server-command ()
   "Return the executable and command line arguments."
