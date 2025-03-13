@@ -85,6 +85,10 @@ Enter the authentication code: " (gethash "url" signin-response)))))
 
 " message)))
 
+(lsp-defun lsp-augment--chat-chunk-handler (_workspace params)
+  "Handler for `augment/chatChunk` notification."
+  (lsp-augment--chat-append-text (gethash "text" params)))
+
 (defun lsp-augment--chat-response-handler (message response)
   "Update chat history when a response is received."
   (let ((text (gethash "text" response))
@@ -143,10 +147,6 @@ Enter the authentication code: " (gethash "url" signin-response)))))
   (list :editor "emacs"
 	:vimVersion emacs-version
 	:pluginVersion "emacs 0.1.0"))
-
-(lsp-defun lsp-augment--chat-chunk-handler (_workspace params)
-  "Handler for `augment/chatChunk` notification."
-  (lsp-augment--chat-append-text (gethash "text" params)))
 
 (lsp-register-client
  (make-lsp-client
