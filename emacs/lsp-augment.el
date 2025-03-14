@@ -173,6 +173,7 @@ Returns a plist with status information from the server."
   :new-connection (lsp-stdio-connection #'lsp-augment--server-command)
   :activation-fn (lsp-activate-on "augment")
   :server-id 'augment-lsp-server
+  :multi-root t
   :completion-in-comments? t
   :initialization-options #'lsp-augment--server-initialization-options
   :notification-handlers (lsp-ht
