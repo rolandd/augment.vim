@@ -1,6 +1,7 @@
 ;;; lsp-augment.el --- lsp-mode client for Augment   -*- lexical-binding: t; -*-
 
 ;;; Copyright (C) 2025 Roland Dreier
+;;; MIT License - See LICENSE.md for full terms
 
 ;;; Author: Roland Dreier <roland.dreier@gmail.com>
 
