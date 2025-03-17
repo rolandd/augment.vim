@@ -73,8 +73,8 @@ function! s:RequestCompletion() abort
         return
     endif
 
-    " Don't send a request if disabled
-    if exists('g:augment_enabled') && !g:augment_enabled
+    " Don't send a request if completions are disabled
+    if exists('g:augment_disable_completions') && g:augment_disable_completions
         return
     endif
 
@@ -138,12 +138,13 @@ function! s:CommandSignOut(...) abort
     call augment#client#Client().Request('augment/logout', {})
 endfunction
 
+" NOTE: The enable/disable commands are deprecated
 function! s:CommandEnable(...) abort
-    let g:augment_enabled = v:true
+    call augment#DisplayError('The `Enable` and `Disable` commands are deprecated in favor of the `g:augment_disable_completions` option. See `:help g:augment_disable_completions` for more details.')
 endfunction
 
 function! s:CommandDisable(...) abort
-    let g:augment_enabled = v:false
+    call augment#DisplayError('The `Enable` and `Disable` commands are deprecated in favor of the `g:augment_disable_completions` option. See `:help g:augment_disable_completions` for more details.')
 endfunction
 
 function! s:CommandStatus(...) abort
@@ -163,13 +164,6 @@ function! s:CommandStatus(...) abort
 endfunction
 
 function! s:CommandChat(range, args) abort
-    if exists('g:augment_enabled') && !g:augment_enabled
-        echohl WarningMsg
-        echo 'Augment: Not enabled. Run ":Augment enable" to enable the plugin.'
-        echohl None
-        return
-    endif
-
     if !s:IsRunning()
         echohl WarningMsg
         echo s:NOT_RUNNING_MSG

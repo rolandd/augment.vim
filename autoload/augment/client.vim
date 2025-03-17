@@ -181,7 +181,7 @@ function! s:HandleStatus(client, params, result, err) abort
     endif
 
     let loggedIn = a:result.loggedIn
-    let enabled = exists('g:augment_enabled') ? g:augment_enabled : v:true
+    let disabled = exists('g:augment_disable_completions') && g:augment_disable_completions
     if has_key(a:result, 'syncPercentage')
         let syncPercentage = a:result.syncPercentage == 100 ? 'fully' : printf('%d%%', a:result.syncPercentage)
         let syncText = printf(' (workspace %s synced)', syncPercentage)
@@ -191,10 +191,10 @@ function! s:HandleStatus(client, params, result, err) abort
 
     if !loggedIn
         echom 'Augment: Not signed in. Run ":Augment signin" to start the sign in flow or ":h augment" for more information on the plugin.'
-    elseif !enabled
-        echom printf('Augment%s: Signed in, disabled.', syncText)
+    elseif disabled
+        echom printf('Augment%s: Signed in, completions disabled.', syncText)
     else
-        echom printf('Augment%s: Signed in, enabled.', syncText)
+        echom printf('Augment%s: Signed in.', syncText)
     endif
 endfunction
 

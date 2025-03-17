@@ -35,13 +35,7 @@ The following commands are provided:
 `:Augment signout`
     Sign out of Augment.
 
-                                                            *:Augment_enable*
-`:Augment enable`
-    Globally enable suggestions (on by default).
 
-                                                            *:Augment_disable*
-`:Augment disable`
-    Globally disable suggestions.
 
                                                             *:Augment_log*
 `:Augment log`
@@ -71,10 +65,11 @@ g:augment_disable_tab_mapping
     The default tab mapping can be disabled by setting
     `g:augment_disable_tab_mapping = v:true` before the plugin is loaded.
 
-                                               *g:augment_enabled*
-g:augment_enabled
-    Inline completions can be disabled by setting `g:augment_enabled = v:false`
-    before the plugin is loaded.
+                                               *g:augment_disable_completions*
+g:augment_disable_completions
+    Inline completions can be disabled by setting
+    `g:augment_disable_completions = v:true` in your vimrc or at any time
+    during editing.
 
                                                *g:augment_workspace_folders*
 g:augment_workspace_folders

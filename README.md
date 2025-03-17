@@ -71,8 +71,6 @@ The following commands are provided:
 :Augment status        " View the current status of the plugin
 :Augment signin        " Start the sign in flow
 :Augment signout       " Sign out of Augment
-:Augment enable        " Globally enable suggestions (on by default)
-:Augment disable       " Globally disable suggestions
 :Augment log           " View the plugin log
 :Augment chat          " Send a chat message to Augment AI
 :Augment chat-new      " Start a new chat conversation
@@ -166,6 +164,10 @@ inoremap <cr> <cmd>call augment#Accept("\n")<cr>
 
 The default tab mapping can be disabled by setting
 `g:augment_disable_tab_mapping = v:true` before the plugin is loaded.
+
+Completions can be disabled entirely by setting
+`g:augment_disable_completions = v:true` in your vimrc or at any time during
+editing.
 
 If another plugin uses tab in insert mode, the Augment tab mapping may be
 overridden depending on the order in which the plugins are loaded. If tab isn't
