@@ -15,15 +15,21 @@ accept a suggestion, or keep typing to refine the suggestions. To ask questions
 about your codebase or request specific changes, use the `:Augment chat` command
 to start a chat conversation.
 
-## Installation
+## Getting Started
 
-1. Both Vim and Neovim are supported, but the plugin may require a newer version
-   than what's installed on your system by default.
+1. Sign up for a free trial of Augment at
+   [augmentcode.com](https://augmentcode.com).
 
-   - [Vim](https://github.com/vim/vim?tab=readme-ov-file#installation) version 9.1.0 or newer.
+1. Ensure you have a compatible editor version installed. Both Vim and Neovim
+   are supported, but the plugin may require a newer version than what is
+   installed on your system by default.
 
-   - [Neovim](https://github.com/neovim/neovim/tree/master?tab=readme-ov-file#install-from-package), version
-     0.10.0 or newer.
+   - For [Vim](https://github.com/vim/vim?tab=readme-ov-file#installation),
+     version 9.1.0 or newer.
+
+   - For
+     [Neovim](https://github.com/neovim/neovim/tree/master?tab=readme-ov-file#install-from-package),
+     version 0.10.0 or newer.
 
 1. Install [Node.js](https://nodejs.org/en/download/package-manager/all),
    version 22.0.0 or newer, which is a required dependency.
