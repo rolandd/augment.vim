@@ -13,6 +13,7 @@
 ;;; Code:
 
 (require 'lsp-mode)
+(require 'markdown-mode)
 
 (defgroup lsp-augment nil
   "LSP support for Augment."
