@@ -12,9 +12,8 @@ What's working:
 
 1. Chat, including multi-turn and referring to a region of code
 
-What's not currently working:
-
-1. Completions
+1. Completions with company-mode (but see the commit "Rewrite
+   completion responses from Augment so Emacs accepts them")
 
 ## Getting Started
 
