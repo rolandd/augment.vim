@@ -181,5 +181,34 @@ Returns a plist with status information from the server."
   :notification-handlers (lsp-ht
 			  ("augment/chatChunk" #'lsp-augment--chat-chunk-handler))))
 
+(defun lsp-augment--completion-modify-response (resp)
+  "Modify the completion response RESP before processing."
+  (let ((items (if (lsp-completion-list? resp)
+		   (lsp:completion-list-items resp)
+		 resp)))
+    ;; Modify each completion item
+    (dolist (item items)
+      (when-let* ((insert-text (lsp:completion-item-insert-text? item)))
+	  (lsp:set-completion-item-label item insert-text)
+
+	  ;; Convert insertText to textEdit
+	  (unless (lsp:completion-item-text-edit? item)
+	    (let* ((position (lsp-make-position :line (lsp--cur-line)
+						:character (- (point) (line-beginning-position))))
+		   (range (lsp-make-range :start position :end position))
+		   (text-edit (lsp-make-text-edit :range range :new-text insert-text)))
+	      (lsp:set-completion-item-text-edit? item text-edit)
+	      (lsp:set-completion-item-insert-text? item nil))))))
+    resp)
+
+(defun lsp-augment--completion-advice (orig-fun method params &rest args)
+  "Advice around lsp-request-while-no-input' to fix completion response for emacs."
+  (if (string= method "textDocument/completion")
+      (let ((response (apply orig-fun method params args)))
+	(lsp-augment--completion-modify-response response))
+    (apply orig-fun method params args)))
+
+(advice-add 'lsp-request-while-no-input :around #'lsp-augment--completion-advice)
+
 (provide 'lsp-augment)
 ;;; lsp-augment.el ends here
