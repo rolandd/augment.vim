@@ -30,21 +30,19 @@
   "Log into the Augment service."
   (interactive)
   (condition-case err
-      (let
-	  ((signin-response
-	    (lsp-send-request (lsp-make-request "augment/login" nil))))
-	(if (gethash "loggedIn" signin-response)
+      (let ((signin-response (lsp-request "augment/login" nil)))
+	(if (lsp-get signin-response :loggedIn)
 	    (message "Already logged into Augment")
 	  (progn
-	    (browse-url (gethash "url" signin-response))
+	    (browse-url (lsp-get signin-response :url))
 	    (let ((auth-code (read-from-minibuffer (format "Please complete authentication in your browser...
 %s
 
 After authenticating, you will receive a code.
 Paste the code in the prompt below.
 
-Enter the authentication code: " (gethash "url" signin-response)))))
-	      (lsp-send-request (lsp-make-request "augment/token" (list :code auth-code)))
+Enter the authentication code: " (lsp-get signin-response :url)))))
+	      (lsp-request "augment/token" (list :code auth-code))
 	      (message "Successfully logged into Augment.")))))
     (error (message "Failed to sign in: %s" (error-message-string err)))))
 
@@ -52,9 +50,7 @@ Enter the authentication code: " (gethash "url" signin-response)))))
   "Log out of the Augment service."
   (interactive)
   (condition-case err
-      (let
-	  ((signout-response
-	    (lsp-send-request (lsp-make-request "augment/logout" nil))))
+      (let ((signout-response (lsp-request "augment/logout" nil)))
 	(message "Signed out of Augment."))
     (error (message "Failed to sign out: %s" (error-message-string err)))))
 
@@ -89,12 +85,12 @@ Enter the authentication code: " (gethash "url" signin-response)))))
 
 (lsp-defun lsp-augment--chat-chunk-handler (_workspace params)
   "Handler for `augment/chatChunk` notification."
-  (lsp-augment--chat-append-text (gethash "text" params)))
+  (lsp-augment--chat-append-text (lsp-get params :text)))
 
 (defun lsp-augment--chat-response-handler (message response)
   "Update chat history when a response is received."
-  (let ((text (gethash "text" response))
-	(request-id (gethash "requestId" response))
+  (let ((text (lsp-get response :text))
+	(request-id (lsp-get response :requestId))
 	(buf (get-buffer "*Augment Chat History*")))
     (when (and buf text request-id)
       (with-current-buffer buf
@@ -146,12 +142,12 @@ Returns a plist with status information from the server."
   (interactive)
   (condition-case err
       (let ((status-response
-	     (lsp-send-request (lsp-make-request "augment/status" nil))))
+	     (lsp-request "augment/status" nil)))
 	(when (called-interactively-p 'interactive)
-	  (let ((login-status (if (gethash "loggedIn" status-response)
+	  (let ((login-status (if (lsp-get status-response :loggedIn)
 				  "Signed in."
 				"Not signed in."))
-		(sync-status (when-let ((sync-percent (gethash "syncPercentage" status-response)))
+		(sync-status (when-let ((sync-percent (lsp-get status-response :syncPercentage)))
 			       (format " (workspace %s%% synced)" sync-percent))))
 	    (message "Augment%s: %s"
 		     (or sync-status "")
