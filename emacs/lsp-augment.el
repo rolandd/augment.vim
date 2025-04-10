@@ -183,12 +183,19 @@ Returns a plist with status information from the server."
   (let ((items (if (lsp-completion-list? resp)
 		   (lsp:completion-list-items resp)
 		 resp)))
-    ;; Modify each completion item
+    ;; Filter out empty completions
+    (setq items
+	  (cl-remove-if
+	   (lambda (item)
+	     (let ((insert-text (lsp:completion-item-insert-text? item)))
+	       (and insert-text (string-empty-p insert-text))))
+	   items))
+
+    ;; Convert insertText items to textEdit
     (dolist (item items)
       (when-let* ((insert-text (lsp:completion-item-insert-text? item)))
 	  (lsp:set-completion-item-label item insert-text)
 
-	  ;; Convert insertText to textEdit
 	  (unless (lsp:completion-item-text-edit? item)
 	    (let* ((position (lsp-make-position :line (lsp--cur-line)
 						:character (- (point) (line-beginning-position))))
