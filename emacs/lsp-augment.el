@@ -50,8 +50,8 @@ Enter the authentication code: " (lsp-get signin-response :url)))))
   "Log out of the Augment service."
   (interactive)
   (condition-case err
-      (let ((signout-response (lsp-request "augment/logout" nil)))
-	(message "Signed out of Augment."))
+      (progn (lsp-request "augment/logout" nil)
+	     (message "Signed out of Augment."))
     (error (message "Failed to sign out: %s" (error-message-string err)))))
 
 (defun lsp-augment--chat-append-text (text)
