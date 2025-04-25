@@ -35,6 +35,9 @@ project's directory here."
   :group 'lsp-augment
   :type '(repeat directory))
 
+(defvar-local lsp-augment--chat-history nil
+  "Chat history for the Augment buffer.")
+
 (defun lsp-augment-signin ()
   "Log into the Augment service."
   (interactive)
