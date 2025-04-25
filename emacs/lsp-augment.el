@@ -185,9 +185,10 @@ Returns a plist with status information from the server."
 
 (defun lsp-augment--custom-capabilities ()
   "Add workspace folders to initialization request."
-  (let ((folders (lsp-augment--get-workspace-folders)))
-    (when folders
-      `(:workspaceFolders ,folders))))
+  (or (when-let* ((folders (lsp-augment--get-workspace-folders))
+                  ((> (length folders) 0)))
+        `(:workspaceFolders ,folders))
+      '()))
 
 (lsp-register-client
  (make-lsp-client
@@ -198,7 +199,7 @@ Returns a plist with status information from the server."
   :add-on? t
   :completion-in-comments? t
   :initialization-options #'lsp-augment--server-initialization-options
-  :custom-capabilities #'lsp-augment--custom-capabilities
+  :custom-capabilities (lsp-augment--custom-capabilities)
   :notification-handlers (lsp-ht
 			  ("augment/chatChunk" #'lsp-augment--chat-chunk-handler))))
 
