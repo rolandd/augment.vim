@@ -31,16 +31,7 @@
 These directories help Augment provide better assistance by giving it
 access to related code and context. For example, if you're working on a
 module that depends on another project, you might want to add that
-project's directory here.
-
-You'd use it like so:
-
-  (setq lsp-augment-additional-context-folders
-        '(\"~/projects/shared-library\"
-          \"~/projects/core-framework\"))
-
-Note: you'd remove those backslashes before the double quotes in your
-configuration."
+project's directory here."
   :group 'lsp-augment
   :type '(repeat directory))
 

@@ -47,6 +47,11 @@ What's working:
         (add-to-list 'load-path "/path/to/augment.vim.git/emacs/")
         (require 'lsp-augment)
         (add-to-list 'lsp-language-id-configuration '(emacs-lisp-mode . "augment"))
+        ;; if you have additional directories that you want to add to make
+        ;; Augment Code aware of them, you'd set:
+        (setq lsp-augment-additional-context-folders
+          '("~/projects/shared-library"
+           "~/projects/core-framework\"))
         ```
 
 1. Start emacs and log into your Augment account via `M-x lsp-augment-signin`
