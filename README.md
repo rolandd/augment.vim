@@ -23,41 +23,39 @@ What's working:
 1. Install [Node.js](https://nodejs.org/en/download/package-manager/all),
    version 22.0.0 or newer, which is a required dependency.
 
-1. Install lsp-mode and markdown-mode in emacs
+1. Add this to your `init.el`:
 
-1. Clone this repository somewhere, set `lsp-augment-enabled` to `t`
-   to turn on use of the Augment client, and customize the
-   `lsp-augment-server-script` variable to point at the
-   `dist/server.js` file from the repo, either via `M-x customize` and
-   searching for "augment", or by hand:
+```emacs-lisp
+(use-package lsp-augment
+  :after (lsp-mode markdown-mode)
+  :vc (:fetcher github :repo "rolandd/augment.vim")
+  :config
+  (setq lsp-augment-server-script (thread-last
+                                    "lsp-augment"
+                                    locate-library
+                                    file-name-directory
+                                    (expand-file-name "dist/server.js"))
+        lsp-augment-enabled t
+        lsp-augment-applicable-fn
+        (lambda (_filename mode)
+          (and lsp-augment-enabled
+               (memq mode '(go-mode terraform-mode python-mode))))
+        ;; optional, should you wish to add extra directories
+        ;; to add more context for Augment Code
+        lsp-augment-additional-context-folders
+        '("/path/to/folder"
+          "/path/to/other-folder")))
+```
 
-        ```(custom-set-variables
-         ;; custom-set-variables was added by Custom.
-         ;; If you edit it by hand, you could mess it up, so be careful.
-         ;; Your init file should contain only one such instance.
-         ;; If there is more than one, they won't work right.
-         '(lsp-augment-enabled t)
-         '(lsp-augment-server-script "/path/to/augment.vim.git/dist/server.js"))
-        ```
+The above snippet will git clone the repo and set up the correct load path.
 
-1. (Optionally) customize the `lsp-augment-applicable-fn` function to
-   limit which buffers the Augment LSP client should be started for.
+The following options will be set:
 
-1. Set up lsp-mode to use lsp-augment, adjusting the load-path as
-   necessary to include this repository:
-
-        ```(require 'lsp-mode)
-        (add-hook 'emacs-lisp-mode-hook #'lsp)
-
-        (add-to-list 'load-path "/path/to/augment.vim.git/emacs/")
-        (require 'lsp-augment)
-
-        ;; if you have additional directories that you want to add to make
-        ;; Augment Code aware of them, you'd set:
-        (setq lsp-augment-additional-context-folders
-          '("/path/to/folder"
-           "/path/to/other-folder"))
-        ```
+- the path to the JavaScript required for Augment Code functionality,
+  via `lsp-augment-server-script`
+- enabling of `lsp-augment`, via `lsp-augment-enabled`
+- and most importantly, `lsp-augment-applicable-fn`, which tells
+  `lsp-augment` for which modes to turn on
 
 1. Start emacs and log into your Augment account via `M-x lsp-augment-signin`
 
