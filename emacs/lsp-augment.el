@@ -1,14 +1,17 @@
 ;;; lsp-augment.el --- lsp-mode client for Augment   -*- lexical-binding: t; -*-
 
-;;; Copyright (C) 2025 Roland Dreier
-;;; MIT License - See LICENSE.md for full terms
+;; Copyright (C) 2025 Roland Dreier
+;; MIT License - See LICENSE.md for full terms
 
-;;; Author: Roland Dreier <roland.dreier@gmail.com>
+;; Author: Roland Dreier <roland.dreier@gmail.com>
+;; Package-Requires: ((emacs "27.1") lsp-mode markdown-mode)
+;; Keywords: languages, tools
+;; URL: https://github.com/rolandd/augment.vim
 
 ;;; Commentary:
 
-;;; LSP client for the Augment (https://www.augmentcode.com/) node server
-;;; Based on the vim client from https://github.com/augmentcode/augment.vim
+;; LSP client for the Augment (https://www.augmentcode.com/) node server
+;; Based on the vim client from https://github.com/augmentcode/augment.vim
 
 ;;; Code:
 
