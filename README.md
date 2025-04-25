@@ -50,8 +50,8 @@ What's working:
         ;; if you have additional directories that you want to add to make
         ;; Augment Code aware of them, you'd set:
         (setq lsp-augment-additional-context-folders
-          '("~/projects/shared-library"
-           "~/projects/core-framework\"))
+          '("/path/to/folder"
+           "/path/to/other-folder"))
         ```
 
 1. Start emacs and log into your Augment account via `M-x lsp-augment-signin`
