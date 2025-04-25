@@ -183,6 +183,12 @@ Returns a plist with status information from the server."
                     :name (file-name-nondirectory (directory-file-name folder))))
             lsp-augment-additional-context-folders)))
 
+(defun lsp-augment--custom-capabilities ()
+  "Add workspace folders to initialization request."
+  (let ((folders (lsp-augment--get-workspace-folders)))
+    (when folders
+      `(:workspaceFolders ,folders))))
+
 (lsp-register-client
  (make-lsp-client
   :new-connection (lsp-stdio-connection #'lsp-augment--server-command)
@@ -192,7 +198,7 @@ Returns a plist with status information from the server."
   :add-on? t
   :completion-in-comments? t
   :initialization-options #'lsp-augment--server-initialization-options
-  :workspace-folders #'lsp-augment--get-workspace-folders
+  :custom-capabilities #'lsp-augment--custom-capabilities
   :notification-handlers (lsp-ht
 			  ("augment/chatChunk" #'lsp-augment--chat-chunk-handler))))
 
