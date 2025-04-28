@@ -21,7 +21,13 @@
 (defgroup lsp-augment nil
   "LSP support for Augment."
   :group 'lsp-mode
+  :tag "Augment LSP"
   :link '(url-link "https://www.augmentcode.com"))
+
+(defcustom lsp-augment-enabled nil
+  "Enable Augment LSP client."
+  :group 'lsp-augment
+  :type 'boolean)
 
 (defcustom lsp-augment-server-script "server.js"
   "Path to server script to run with node."
@@ -37,6 +43,12 @@ module that depends on another project, you might want to add that
 project's directory here."
   :group 'lsp-augment
   :type '(repeat directory))
+
+(defcustom lsp-augment-applicable-fn (lambda (&rest _) lsp-augment-enabled)
+  "A function that returns non-nil if Augment LSP should be enabled for the buffer.
+The inputs are the file name and the major mode of the buffer."
+  :type 'function
+  :group 'lsp-augment)
 
 (defvar-local lsp-augment--chat-history nil
   "Chat history for the Augment buffer.")
@@ -173,6 +185,7 @@ Returns a plist with status information from the server."
 
 (defun lsp-augment--server-command ()
   "Return the executable and command line arguments."
+  ;;(list "python3" "/home/roland/proxy.py" (concat "node" " " lsp-augment-server-script " " "--stdio")))
   (list "node" lsp-augment-server-script "--stdio"))
 
 (defun lsp-augment--server-initialization-options ()
@@ -199,7 +212,7 @@ Returns a plist with status information from the server."
 (lsp-register-client
  (make-lsp-client
   :new-connection (lsp-stdio-connection #'lsp-augment--server-command)
-  :activation-fn (lsp-activate-on "augment")
+  :activation-fn lsp-augment-applicable-fn
   :server-id 'augment-lsp-server
   :multi-root t
   :add-on? t
