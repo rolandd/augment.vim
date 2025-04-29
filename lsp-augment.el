@@ -4,7 +4,8 @@
 ;; MIT License - See LICENSE.md for full terms
 
 ;; Author: Roland Dreier <roland.dreier@gmail.com>
-;; Package-Requires: ((emacs "27.1") lsp-mode markdown-mode)
+;; Package-Requires: ((emacs "27.1") (lsp-mode "6.2") (markdown-mode "2.3"))
+;; Version: 0.1.0
 ;; Keywords: languages, tools
 ;; URL: https://github.com/rolandd/augment.vim
 
@@ -29,7 +30,12 @@
   :group 'lsp-augment
   :type 'boolean)
 
-(defcustom lsp-augment-server-script "server.js"
+(defcustom lsp-augment-server-script
+  (thread-last
+    "lsp-augment"
+    locate-library
+    file-name-directory
+    (expand-file-name "dist/server.js"))
   "Path to server script to run with node."
   :group 'lsp-augment
   :risky t
