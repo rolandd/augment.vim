@@ -29,7 +29,12 @@
   :group 'lsp-augment
   :type 'boolean)
 
-(defcustom lsp-augment-server-script "server.js"
+(defcustom lsp-augment-server-script
+  (thread-last
+    "lsp-augment"
+    locate-library
+    file-name-directory
+    (expand-file-name "dist/server.js"))
   "Path to server script to run with node."
   :group 'lsp-augment
   :risky t

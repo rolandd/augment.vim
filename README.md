@@ -30,12 +30,7 @@ What's working:
   :after (lsp-mode markdown-mode)
   :vc (:fetcher github :repo "rolandd/augment.vim")
   :config
-  (setq lsp-augment-server-script (thread-last
-                                    "lsp-augment"
-                                    locate-library
-                                    file-name-directory
-                                    (expand-file-name "dist/server.js"))
-        lsp-augment-enabled t
+  (setq lsp-augment-enabled t
         lsp-augment-applicable-fn
         (lambda (_filename mode)
           (and lsp-augment-enabled
