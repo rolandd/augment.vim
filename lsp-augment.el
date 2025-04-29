@@ -4,7 +4,8 @@
 ;; MIT License - See LICENSE.md for full terms
 
 ;; Author: Roland Dreier <roland.dreier@gmail.com>
-;; Package-Requires: ((emacs "27.1") lsp-mode markdown-mode)
+;; Package-Requires: ((emacs "27.1") (lsp-mode "6.2") (markdown-mode "2.3"))
+;; Version: 0.1.0
 ;; Keywords: languages, tools
 ;; URL: https://github.com/rolandd/augment.vim
 
