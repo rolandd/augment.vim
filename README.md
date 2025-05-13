@@ -238,4 +238,4 @@ For details on usage restrictions, refer to the [LICENSE.md](LICENSE.md) file.
 
 We encourage users to report any bugs or issues directly to us. Please use the [Issues](https://github.com/augmentcode/augment.vim/issues) section of this repository to share your feedback.
 
-For any other questions, feel free to reach out to support@augmentcode.com.
+For any other questions, feel free to reach out to [Augment Support](https://support.augmentcode.com/).

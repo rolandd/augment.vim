@@ -2,5 +2,5 @@
 " MIT License - See LICENSE.md for full terms
 
 function! augment#version#Version() abort
-    return '0.28.0'
+    return '0.29.0'
 endfunction
