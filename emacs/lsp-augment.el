@@ -185,7 +185,6 @@ Returns a plist with status information from the server."
 
 (defun lsp-augment--server-command ()
   "Return the executable and command line arguments."
-  ;;(list "python3" "/home/roland/proxy.py" (concat "node" " " lsp-augment-server-script " " "--stdio")))
   (list "node" lsp-augment-server-script "--stdio"))
 
 (defun lsp-augment--server-initialization-options ()
