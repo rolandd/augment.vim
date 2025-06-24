@@ -85,8 +85,8 @@ Enter the authentication code: " (lsp-get signin-response :url)))))
   "Append text to the Augment chat buffer."
   (let ((buf-name "*Augment Chat History*"))
     (with-current-buffer (get-buffer-create buf-name)
-      (unless (derived-mode-p 'markdown-view-mode)
-	(markdown-view-mode))
+      (unless (derived-mode-p 'gfm-view-mode)
+	(gfm-view-mode))
       (save-excursion
 	(let ((inhibit-read-only t))
 	  (goto-char (point-max))
