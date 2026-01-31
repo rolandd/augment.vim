@@ -98,15 +98,12 @@ Enter the authentication code: " (lsp-get signin-response :url)))))
 
 (defun lsp-augment--chat-append-message (message)
   "Append a user chat message to the Augment chat buffer."
-  (lsp-augment--chat-append-text (format "================================================================================
-
-	*You*
+  (lsp-augment--chat-append-text (format "
+## You
 
 %s
 
---------------------------------------------------------------------------------
-
-	*Augment*
+## Augment
 
 " message)))
 
@@ -161,7 +158,8 @@ Enter the authentication code: " (lsp-get signin-response :url)))))
       (with-current-buffer buf-name
 	(let ((inhibit-read-only t))
 	  (erase-buffer))
-	(setq-local lsp-augment--chat-history nil)))))
+	(setq-local lsp-augment--chat-history nil))))
+  (message "Chat history cleared."))
 
 (defun lsp-augment-status ()
   "Get the current status of the Augment service.
