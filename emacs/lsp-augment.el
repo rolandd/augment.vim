@@ -29,8 +29,12 @@
   :group 'lsp-augment
   :type 'boolean)
 
-(defcustom lsp-augment-server-script "server.js"
-  "Path to server script to run with node."
+(defconst lsp-augment--base-dir (file-name-directory (or load-file-name buffer-file-name))
+  "Directory containing the lsp-augment.el file.")
+
+(defcustom lsp-augment-server-script (expand-file-name "../dist/server.js" lsp-augment--base-dir)
+  "Path to server script to run with node.
+Defaults to the server.js bundled with the package."
   :group 'lsp-augment
   :risky t
   :type 'file)
